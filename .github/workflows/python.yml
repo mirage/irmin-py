@@ -30,6 +30,7 @@ jobs:
 
       - run: "opam pin add libirmin.dev git+https://github.com/zshipko/libirmin.git --no-action"
       - run: opam install libirmin
+      - run: find . -name libirmin.so
       - run: pip3 install cffi pytest --user
       - run: opam exec -- pip3 install . --user
       - run: opam exec -- py.test test.py
