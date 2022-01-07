@@ -1,0 +1,37 @@
+name: libirmin
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  python:
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-compiler:
+          - 4.13.1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v2
+        with:
+          ocaml-version: ${{ matrix.ocaml-compiler}}
+
+      - run: "opam pin add libirmin.dev git+https://github.com/mirage/irmin.git --no-action"
+      - run: opam install libirmin
+      - run: pip3 install cffi pytest --user
+      - run: opam exec -- make
+      - run: opam exec -- pip3 install . --user
+      - run: py.test test.py
+
