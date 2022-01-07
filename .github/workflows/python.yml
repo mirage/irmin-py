@@ -29,7 +29,7 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler}}
 
       - run: "opam pin add libirmin.dev git+https://github.com/zshipko/libirmin.git --no-action"
-      - run: opam install libirmin
+      - run: opam install ca-certs libirmin
       - run: find . -name libirmin.so
       - run: pip3 install cffi pytest --user
       - run: opam exec -- pip3 install . --user
