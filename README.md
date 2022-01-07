@@ -17,7 +17,6 @@ After installing [libirmin](https://github.com/mirage/irmin) using opam, you can
 
 ```
 $ pip3 install git+https://github.com/mirage/irmin-py.git --user
-
 ```
 
 Or from the root of the project:
