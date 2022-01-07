@@ -32,5 +32,5 @@ jobs:
       - run: opam install libirmin
       - run: pip3 install cffi pytest --user
       - run: opam exec -- pip3 install . --user
-      - run: py.test test.py
+      - run: opam exec -- py.test test.py
 
