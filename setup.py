@@ -17,8 +17,8 @@ setup(
     author_email='zachshipko@gmail.com',
     url='https://github.com/zshipko/libirmin',
     packages=['irmin'],
-    package_dir={'': 'irmin'},
-    #package_data={'': ['./libirmin.so', './irmin.h']},
+    # package_dir={'': 'irmin'},
+    # package_data={'': ['./libirmin.so', './irmin.h']},
     install_requires=["cffi>=1.0.0"],
     include_package_data=True,
     cmdclass={'build': build})
