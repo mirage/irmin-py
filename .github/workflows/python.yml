@@ -14,7 +14,7 @@ jobs:
       fail-fast: true
       matrix:
         os:
-          - macos-latest
+          - macos
           - ubuntu-latest
         ocaml-compiler:
           - 4.13.1
@@ -28,8 +28,6 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler}}
 
-      - if: runner.os == 'macOS'
-        run: brew install ca-certificates
       - run: "opam pin add libirmin.dev git+https://github.com/zshipko/libirmin.git --no-action"
       - run: opam install libirmin
       - run: find . -name libirmin.so
