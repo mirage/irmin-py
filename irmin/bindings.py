@@ -5,7 +5,7 @@ self_path = os.path.dirname(__file__)
 libirmin_prefix = os.getenv("LIBIRMIN_PREFIX", "")
 
 
-def check(prefix_list):
+def find_path(prefix_list):
     for prefix in prefix_list:
         if os.path.exists(os.path.join(
                 prefix, "lib", "libirmin.so")) and os.path.exists(
@@ -15,7 +15,7 @@ def check(prefix_list):
         "Unable to detect libirmin path, try setting LIBIRMIN_PREFIX")
 
 
-prefix = check([
+prefix = find_path([
     libirmin_prefix,
     self_path,
     os.path.expanduser("~/.local"),

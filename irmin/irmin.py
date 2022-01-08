@@ -1,4 +1,4 @@
-from .irmin_ffi import ffi, lib  # type: ignore
+from .bindings import ffi, lib  # type: ignore
 
 from typing import Optional, Sequence, Any, List, Union
 import json
