@@ -28,10 +28,8 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler}}
 
-      - run: |
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            brew install ca-certificates
-          fi
+      - if: runner.os == 'macOS'
+        run: brew install ca-certificates
       - run: "opam pin add libirmin.dev git+https://github.com/zshipko/libirmin.git --no-action"
       - run: opam install libirmin
       - run: find . -name libirmin.so
