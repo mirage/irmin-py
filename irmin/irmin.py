@@ -644,6 +644,9 @@ class CommitKey:
         self.repo = repo
         self._key = c
 
+    def __del__(self):
+        lib.irmin_commit_key_free(self._key)
+
     @staticmethod
     def of_string(repo, s):
         '''
