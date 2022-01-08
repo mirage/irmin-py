@@ -187,6 +187,13 @@ class Type:
         '''
         return Type(lib.irmin_type_commit(repo._repo))
 
+    @staticmethod
+    def commit_key(repo) -> 'Type':
+        '''
+        CommitKey type for the given repo
+        '''
+        return Type(lib.irmin_type_commit_key(repo._repo))
+
     @property
     def name(self) -> str:
         '''
@@ -631,6 +638,27 @@ class Path:
         lib.irmin_path_free(self._path)
 
 
+class CommitKey:
+    def __init__(self, repo: Repo, c):
+        check(c)
+        self.repo = repo
+        self._key = c
+
+    @staticmethod
+    def of_string(repo, s):
+        '''
+        Parse str containing a hash into IrminCommitKey
+        '''
+        b = str.encode(s)
+        t = Type.commit_key(repo)
+        h = lib.irmin_value_of_string(t, b, len(b))
+        return CommitKey(repo, h)
+
+    def __str__(self):
+        t = Type.commit_key(self.repo)
+        return Value.make(t, self._key).to_string()
+
+
 class Hash:
     def __init__(self, repo: Repo, h):
         check(h)
@@ -715,6 +743,14 @@ class Commit:
         h = lib.irmin_commit_hash(self.repo._repo, self._commit)
         return Hash(self.repo, h)
 
+    @property
+    def key(self) -> CommitKey:
+        '''
+        Get commit key
+        '''
+        h = lib.irmin_commit_key(self.repo._repo, self._commit)
+        return CommitKey(self.repo, h)
+
     def __eq__(self, other: 'Commit') -> bool:  # type: ignore
         return lib.irmin_commit_equal(self.repo._repo, self._commit,
                                       other._commit)
@@ -744,6 +780,16 @@ class Commit:
         Find the commit associated with the given hash
         '''
         c = lib.irmin_commit_of_hash(repo._repo, hash._hash)
+        if c == ffi.NULL:
+            return None
+        return Commit(repo, c)
+
+    @staticmethod
+    def of_key(repo: Repo, key: CommitKey) -> Optional['Commit']:
+        '''
+        Find the commit associated with the given key
+        '''
+        c = lib.irmin_commit_of_key(repo._repo, key._key)
         if c == ffi.NULL:
             return None
         return Commit(repo, c)
