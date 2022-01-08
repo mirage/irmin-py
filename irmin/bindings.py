@@ -1,12 +1,9 @@
 import cffi  # type: ignore
 import os
 
-self_path = os.path.dirname(__file__)
-libirmin_prefix = os.getenv("LIBIRMIN_PREFIX", "")
 
-
-def find_path(prefix_list):
-    for prefix in prefix_list:
+def find_path(paths):
+    for prefix in paths:
         if os.path.exists(os.path.join(
                 prefix, "lib", "libirmin.so")) and os.path.exists(
                     os.path.join(prefix, "include", "irmin.h")):
@@ -16,8 +13,8 @@ def find_path(prefix_list):
 
 
 prefix = find_path([
-    libirmin_prefix,
-    self_path,
+    os.getenv("LIBIRMIN_PREFIX", ""),
+    os.path.dirname(__file__),
     os.path.expanduser("~/.local"),
     os.path.join(os.getenv("OPAM_SWITCH_PREFIX", "_opam"), "lib", "libirmin"),
     "/usr/local",
