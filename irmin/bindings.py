@@ -14,9 +14,9 @@ def find_path(paths):
 
 prefix = find_path([
     os.getenv("LIBIRMIN_PREFIX", ""),
+    os.path.join(os.getenv("OPAM_SWITCH_PREFIX", "_opam"), "lib", "libirmin"),
     os.path.dirname(__file__),
     os.path.expanduser("~/.local"),
-    os.path.join(os.getenv("OPAM_SWITCH_PREFIX", "_opam"), "lib", "libirmin"),
     "/usr/local",
 ])
 
