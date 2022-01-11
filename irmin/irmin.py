@@ -587,6 +587,9 @@ class Metadata:
         t = Type.metadata(self.repo)
         return Value(self._metadata, t).to_string()
 
+    def __del__(self):
+        lib.irmin_metadata_free(self._metadata)
+
 
 class Path:
     def __init__(self, repo: Repo, ptr):
