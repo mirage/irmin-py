@@ -194,6 +194,20 @@ class Type:
         '''
         return Type(lib.irmin_type_commit_key(repo._repo))
 
+    @staticmethod
+    def kinded_key(repo) -> 'Type':
+        '''
+        KindedKey type for the given repo
+        '''
+        return Type(lib.irmin_type_kinded_key(repo._repo))
+
+    @staticmethod
+    def metadata(repo) -> 'Type':
+        '''
+        Metadata type for the given repo
+        '''
+        return Type(lib.irmin_typmetadata(repo._repo))
+
     @property
     def name(self) -> str:
         '''
@@ -563,6 +577,17 @@ class Repo:
         lib.irmin_repo_free(self._repo)
 
 
+class Metadata:
+    def __init__(self, repo: Repo, ptr):
+        check(ptr)
+        self._metadata = ptr
+        self.repo = repo
+
+    def __str__(self):
+        t = Type.metadata(self.repo)
+        return Value(self._metadata, t).to_string()
+
+
 class Path:
     def __init__(self, repo: Repo, ptr):
         '''
@@ -841,7 +866,7 @@ class Tree:
         path = Path.wrap(self.repo, path)
         value = self.repo.config.contents.to_value(v)
         lib.irmin_tree_add(self.repo._repo, self._tree, path._path,
-                           value._value)
+                           value._value, ffi.NULL)
 
     def __getitem__(self, path: PathType) -> Optional['Value']:
         path = Path.wrap(self.repo, path)
@@ -875,6 +900,17 @@ class Tree:
         if x == ffi.NULL:
             return None
         return Tree(self.repo, x)
+
+    def metadata(self, path: PathType):
+        '''
+        Get metadata at the given path
+        '''
+        path = Path.wrap(self.repo, path)
+        x = lib.irmin_tree_find_metadata(self.repo._repo, self._tree,
+                                         path._path)
+        if x == ffi.NULL:
+            return None
+        return Metadata(self.repo, x)
 
     def set_tree(self, path: PathType, tree: 'Tree'):
         '''
@@ -941,6 +977,16 @@ class Store:
         if x == ffi.NULL:
             return None
         return Tree(self.repo, x)
+
+    def metadata(self, path: PathType):
+        '''
+        Get metadata at the given path
+        '''
+        path = Path.wrap(self.repo, path)
+        x = lib.irmin_find_metadata(self._store, path._path)
+        if x == ffi.NULL:
+            return None
+        return Metadata(self.repo, x)
 
     def __setitem__(self, path: PathType, value):
         if isinstance(value, Tree):
