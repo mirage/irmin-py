@@ -188,6 +188,13 @@ class Type:
         return Type(lib.irmin_type_commit(repo._repo))
 
     @staticmethod
+    def contents(repo) -> 'Type':
+        '''
+        Contents type for the given repo
+        '''
+        return Type(lib.irmin_type_contents(repo._repo))
+
+    @staticmethod
     def commit_key(repo) -> 'Type':
         '''
         CommitKey type for the given repo
@@ -241,6 +248,18 @@ class Value:
     def __eq__(self, other: 'Value') -> bool:  # type: ignore
         return lib.irmin_value_equal(self.type._type, self._value,
                                      other._value)
+
+    @staticmethod
+    def contents_of_hash(repo: 'Repo', h: 'Hash'):
+        t = Type.contents(repo)
+        r = lib.irmin_contents_of_hash(repo._repo, h._hash)
+        if r == ffi.NULL:
+            return None
+        return Value(r, t)
+
+    def hash_contents(self, repo: 'Repo'):
+        h = lib.irmin_contents_hash(repo._repo, self._value)
+        return Hash(repo, h)
 
     @staticmethod
     def make(ty: Type, x):
