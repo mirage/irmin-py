@@ -28,7 +28,11 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler}}
 
+      - run: "opam pin add repr.dev --dev-repo"
+      - run: "opam pin add ppx_repr.dev --dev-repo"
+      - run: "opam pin add index.dev --dev-repo"
       - run: "opam pin add irmin.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add ppx_irmin.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
       - run: "opam pin add irmin-fs.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
       - run: "opam pin add irmin-git.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
       - run: "opam pin add irmin-pack.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
