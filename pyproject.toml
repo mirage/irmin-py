@@ -6,7 +6,7 @@ authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.7"
 cffi = "^1.15.0"
 
 [tool.poetry.dev-dependencies]
