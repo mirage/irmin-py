@@ -28,6 +28,15 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler}}
 
+      - run: "opam pin add irmin.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-fs.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-git.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-pack.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-http.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-graphql.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-tezos.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-layers.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
+      - run: "opam pin add irmin-unix.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
       - run: "opam pin add libirmin.dev git+https://github.com/zshipko/irmin.git#libirmin --no-action"
       - run: opam install libirmin
       - run: find . -name libirmin.so
