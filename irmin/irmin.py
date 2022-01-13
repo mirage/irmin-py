@@ -445,6 +445,9 @@ class Contents:
         self.from_value = from_value
         self.irmin_type = ty
 
+    def _as_contents(self, v):
+        return ffi.cast("IrminContents*", v._value)
+
 
 content_types = {
     "string":
@@ -888,7 +891,7 @@ class Tree:
         path = Path.wrap(self.repo, path)
         value = self.repo.config.contents.to_value(v)
         lib.irmin_tree_add(self.repo._repo, self._tree, path._path,
-                           value._value, ffi.NULL)
+                           ffi.cast("IrminContents*", value._value), ffi.NULL)
 
     def __getitem__(self, path: PathType) -> Optional['Value']:
         path = Path.wrap(self.repo, path)
@@ -896,7 +899,8 @@ class Tree:
         if v == ffi.NULL:
             return None
         return self.repo.config.contents.from_value(
-            Value(v, self.repo.config.contents.irmin_type))
+            Value(ffi.cast("IrminValue*", v),
+                  self.repo.config.contents.irmin_type))
 
     def __delitem__(self, path: PathType):
         path = Path.wrap(self.repo, path)
@@ -988,7 +992,8 @@ class Store:
         if x == ffi.NULL:
             return None
         return self.repo.config.contents.from_value(
-            Value(x, self.repo.config.contents.irmin_type))
+            Value(ffi.cast("IrminValue*", x),
+                  self.repo.config.contents.irmin_type))
 
     def tree(self, path: PathType):
         '''
@@ -1037,7 +1042,8 @@ class Store:
         value = self.repo.config.contents.to_value(value)
         if info is None:
             info = self.info("irmin", "set")
-        lib.irmin_set(self._store, path._path, value._value, info._info)
+        lib.irmin_set(self._store, path._path,
+                      ffi.cast("IrminContents*", value._value), info._info)
 
     def test_and_set(self,
                      path: PathType,
@@ -1049,18 +1055,19 @@ class Store:
         matches the `old` argument
         '''
         path = Path.wrap(self.repo, path)
-        old = self.repo.config.contents.to_value(
+        old = self.repo.config.contents._as_contents(
             old) if value is not None else None
-        value = self.repo.config.contents.to_value(
+        value = self.repo.config.contents._as_contents(
             value) if value is not None else None
         if info is None:
             info = self.info("irmin", "set")
         return check(
             lib.irmin_test_and_set(
                 self._store, path._path,
-                old._value if old is not None else ffi.NULL,
-                value._value if value is not None else ffi.NULL, info._info),
-            False)
+                ffi.cast("IrminContents*", old._value)
+                if old is not None else ffi.NULL,
+                ffi.cast("IrminContents*", value._value)
+                if value is not None else ffi.NULL, info._info), False)
 
     def set_tree(self,
                  path: PathType,
