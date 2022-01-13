@@ -448,6 +448,16 @@ class Contents:
     def _as_contents(self, v):
         return ffi.cast("IrminContents*", v._value)
 
+    def hash(self, repo, v):
+        v = self.to_value(v)
+        h = lib.irmin_contents_hash(repo._repo, self._as_contents(v))
+        return Hash(repo, h)
+
+    def of_hash(self, repo, h: 'Hash'):
+        v = lib.irmin_contents_of_hash(repo._repo, h._hash)
+        v = Value(ffi.cast("IrminValue*", v), self.irmin_type)
+        return self.from_value(v)
+
 
 content_types = {
     "string":
@@ -566,6 +576,12 @@ class Repo:
         self.config = config
         self._repo = lib.irmin_repo_new(self.config._config)
         check(self._repo)
+
+    def contents_of_hash(self, h):
+        return self.config.contents.of_hash(self, h)
+
+    def hash_contents(self, c):
+        return self.config.contents.hash(self, c)
 
     def type(self):
         return self.config.contents.type

@@ -81,3 +81,12 @@ def test_tree():
     paths = store.list(["a", "b"])
     assert (repo.path(["c"]) in paths)
     assert (repo.path(["d"]) in paths)
+
+
+def test_contents():
+    repo, store = init()
+    store["a", "b", "c"] = {"foo": "bar"}
+
+    hash = repo.hash_contents({"foo": "bar"})
+    v = repo.contents_of_hash(hash)
+    assert (v == {"foo": "bar"})
