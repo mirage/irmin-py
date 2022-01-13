@@ -24,8 +24,7 @@ ffi = cffi.FFI()
 with open(os.path.join(prefix, "include", "irmin.h")) as h_file:
     lines = h_file.readlines()
     lines = [
-        line for line in lines if '#include' not in line
-        and '#define' not in line and 'static' not in line and '#' not in line
+        line for line in lines if '#' not in line and 'static' not in line
     ]
     lines.append("void free(void*);")
     ffi.cdef('\n'.join(lines))
