@@ -903,13 +903,20 @@ class Tree:
     def __setitem__(self, path: PathType, v):
         if isinstance(v, Tree):
             return self.set_tree(path, v)
+        return self.set(path, v)
 
+    def set(self, path: PathType, v):
         path = Path.wrap(self.repo, path)
         value = self.repo.config.contents.to_value(v)
-        lib.irmin_tree_add(self.repo._repo, self._tree, path._path,
-                           ffi.cast("IrminContents*", value._value), ffi.NULL)
+        x = lib.irmin_tree_add(self.repo._repo, self._tree, path._path,
+                               ffi.cast("IrminContents*", value._value),
+                               ffi.NULL)
+        check(x, False)
 
-    def __getitem__(self, path: PathType) -> Optional['Value']:
+    def __getitem__(self, path: PathType):
+        return self.get(path)
+
+    def get(self, path: PathType):
         path = Path.wrap(self.repo, path)
         v = lib.irmin_tree_find(self.repo._repo, self._tree, path._path)
         if v == ffi.NULL:
@@ -919,10 +926,17 @@ class Tree:
                   self.repo.config.contents.irmin_type))
 
     def __delitem__(self, path: PathType):
+        return self.remove(path)
+
+    def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
-        ffi.irmin_tree_remove(self.repo._repo, self._tree, path._path)
+        x = ffi.irmin_tree_remove(self.repo._repo, self._tree, path._path)
+        check(x, False)
 
     def __contains__(self, path: PathType) -> bool:
+        return self.mem(path)
+
+    def mem(self, path: PathType) -> bool:
         path = Path.wrap(self.repo, path)
         return lib.irmin_tree_mem(self.repo._repo, self._tree, path._path)
 
@@ -959,8 +973,9 @@ class Tree:
         Set a tree at the given path
         '''
         path = Path.wrap(self.repo, path)
-        lib.irmin_tree_set_tree(self.repo._repo, self._tree, path._path,
-                                tree._tree)
+        x = lib.irmin_tree_set_tree(self.repo._repo, self._tree, path._path,
+                                    tree._tree)
+        check(x, False)
 
     def to_json(self):
         '''
@@ -1003,6 +1018,9 @@ class Store:
         lib.irmin_free(self._store)
 
     def __getitem__(self, path: PathType):
+        return self.get(path)
+
+    def get(self, path: PathType):
         path = Path.wrap(self.repo, path)
         x = lib.irmin_find(self._store, path._path)
         if x == ffi.NULL:
@@ -1037,8 +1055,12 @@ class Store:
         return self.set(path, value)
 
     def __delitem__(self, path: PathType):
+        return self.remove(path)
+
+    def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
-        ffi.irmin_remove(self._store, path._path)
+        x = ffi.irmin_remove(self._store, path._path)
+        check(x, False)
 
     def __contains__(self, path: PathType) -> bool:
         return self.mem(path)
@@ -1058,8 +1080,9 @@ class Store:
         value = self.repo.config.contents.to_value(value)
         if info is None:
             info = self.info("irmin", "set")
-        lib.irmin_set(self._store, path._path,
-                      ffi.cast("IrminContents*", value._value), info._info)
+        x = lib.irmin_set(self._store, path._path,
+                          ffi.cast("IrminContents*", value._value), info._info)
+        check(x, False)
 
     def test_and_set(self,
                      path: PathType,
