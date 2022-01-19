@@ -1009,9 +1009,13 @@ class Tree:
 
 
 class Store:
-    def __init__(self, repo: Repo, branch: str = "main"):
+    def __init__(self, repo: Repo, branch: Union[str, Commit] = "main"):
         self.repo = repo
-        self._store = lib.irmin_of_branch(self.repo._repo, str.encode(branch))
+        if isinstance(branch, str):
+            self._store = lib.irmin_of_branch(self.repo._repo,
+                                              str.encode(branch))
+        else:
+            self._store = lib.irmin_of_commit(self.repo._repo, branch._commit)
         check(self._store)
 
     def __del__(self):
