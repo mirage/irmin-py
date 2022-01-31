@@ -2,8 +2,8 @@ from util import *
 from irmin import *
 import sys
 
-if len(sys.argv) < 2:
-    print("usage: python3 tezos.py /path/to/tezos/context [chain_id]")
+if len(sys.argv)< 3:
+    print("usage: python3 tezos.py /path/to/tezos/context <commit-hash>")
     sys.exit(0)
 
 root = sys.argv[1]
@@ -15,13 +15,11 @@ config["readonly"] = True
 # Initialize the repo
 repo = Repo(config)
 
-if len(sys.argv) > 2:
-    chain_id = sys.argv[2]
-else:
-    chain_id = repo.branches[0]
+commit_hash = Hash.of_string(repo, sys.argv[2])
+commit = Commit.of_hash(repo, commit_hash)
 
 # Open the `master` branch
-store = Store(repo, branch=chain_id)
+store = Store(repo, branch=commit)
 
 
 def list_path(store, path):
