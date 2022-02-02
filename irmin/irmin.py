@@ -24,9 +24,7 @@ class String(str):
         else:
             cls._ptr = ptr
         if cls._ptr == ffi.NULL:
-            err = error_msg()
-            if err is not None:
-                raise IrminException(err)
+            raise IrminException("NULL string")
         length = lib.irmin_string_length(cls._ptr)
         s = lib.irmin_string_data(cls._ptr)
         b = ffi.buffer(s, length)
@@ -49,19 +47,19 @@ class String(str):
         lib.irmin_string_free(self._ptr)
 
 
-def error_msg() -> Optional[String]:
+def error_msg(repo: 'Repo') -> Optional[String]:
     '''
     Get error message
     '''
-    s = lib.irmin_error_msg()
+    s = lib.irmin_repo_get_error(repo._repo)
     if s == ffi.NULL:
         return None
     return String(s)
 
 
-def check(res, value=ffi.NULL):
+def check(repo, res, value=ffi.NULL):
     if res == value:
-        err = error_msg()
+        err = error_msg(repo)
         if err is not None:
             raise IrminException(err)
     return res
@@ -80,7 +78,8 @@ class Bytes(bytes):
         else:
             cls._ptr = ptr
 
-        check(cls._ptr)
+        if cls._ptr == ffi.NULL:
+            raise IrminException("NULL bytes")
         length = lib.irmin_string_length(cls._ptr)
         s = lib.irmin_string_data(cls._ptr)
         b = ffi.buffer(s, length)
@@ -107,7 +106,8 @@ class Type:
         '''
         Create a Type from IrminType pointer
         '''
-        check(ptr)
+        if ptr == ffi.NULL:
+            raise IrminException("Bad type")
         self._type = ptr
 
     @staticmethod
@@ -241,7 +241,8 @@ class Value:
         '''
         Create new value from pointer and Type
         '''
-        check(ptr)
+        if ptr == ffi.NULL:
+            raise IrminException("Bad value")
         self.type = ty
         self._value = ptr
 
@@ -487,7 +488,8 @@ class Config:
         '''
         Create a new config from IrminConfig pointer and contents name
         '''
-        check(ptr)
+        if ptr == ffi.NULL:
+            raise IrminException("Invalid config")
         self._config = ptr
         self.contents = contents
         if root is not None:
@@ -575,7 +577,8 @@ class Repo:
         '''
         self.config = config
         self._repo = lib.irmin_repo_new(self.config._config)
-        check(self._repo)
+        if self._repo == ffi.NULL:
+            raise IrminException("Unable to create repo")
 
     def contents_of_hash(self, h):
         return self.config.contents.of_hash(self, h)
@@ -588,6 +591,9 @@ class Repo:
 
     def irmin_type(self):
         return self.config.contents.irmin_type
+
+    def error_msg(self) -> Optional[String]:
+        return error_msg(self)
 
     @property
     def branches(self):
@@ -617,7 +623,7 @@ class Repo:
 
 class Metadata:
     def __init__(self, repo: Repo, ptr):
-        check(ptr)
+        check(repo, ptr)
         self._metadata = ptr
         self.repo = repo
 
@@ -646,7 +652,7 @@ class Path:
             ptr = lib.irmin_path_of_string(repo._repo, b, len(b))
         elif not isinstance(ptr, ffi.CData):
             raise IrminException("Invalid path type: " + str(type(ptr)))
-        check(ptr)
+        check(repo, ptr)
         self._path = ptr
 
     @staticmethod
@@ -673,7 +679,7 @@ class Path:
         '''
         ptr = lib.irmin_path_parent(self.repo._repo, self._path)
         if ptr == ffi.NULL:
-            check(ptr)
+            check(self.repo, ptr)
             return None
         return Path(self.repo, ptr)
 
@@ -706,7 +712,7 @@ class Path:
 
 class CommitKey:
     def __init__(self, repo: Repo, c):
-        check(c)
+        check(repo, c)
         self.repo = repo
         self._key = c
 
@@ -730,7 +736,7 @@ class CommitKey:
 
 class Hash:
     def __init__(self, repo: Repo, h):
-        check(h)
+        check(repo, h)
         self.repo = repo
         self._hash = h
 
@@ -767,7 +773,7 @@ class Info:
                                    str.encode(message))
         elif not isinstance(i, ffi.CData):
             raise TypeError("Invalid pointer in Info.__init__")
-        check(i)
+        check(repo, i)
         self.repo = repo
         self._info = i
 
@@ -800,7 +806,7 @@ class Info:
 
 class Commit:
     def __init__(self, repo: Repo, c):
-        check(c)
+        check(repo, c)
         self.repo = repo
         self._commit = c
 
@@ -895,7 +901,7 @@ class Tree:
             self._tree = t
         else:
             self._tree = lib.irmin_tree_new(self.repo._repo)
-        check(self._tree)
+        check(repo, self._tree)
 
     def __eq__(self, other: 'Tree') -> bool:  # type: ignore
         return lib.irmin_tree_equal(self.repo._repo, self._tree, other._tree)
@@ -911,7 +917,7 @@ class Tree:
         x = lib.irmin_tree_add(self.repo._repo, self._tree, path._path,
                                ffi.cast("IrminContents*", value._value),
                                ffi.NULL)
-        check(x, False)
+        check(self.repo, x, False)
 
     def __getitem__(self, path: PathType):
         return self.get(path)
@@ -931,7 +937,7 @@ class Tree:
     def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
         x = ffi.irmin_tree_remove(self.repo._repo, self._tree, path._path)
-        check(x, False)
+        check(self.repo, x, False)
 
     def __contains__(self, path: PathType) -> bool:
         return self.mem(path)
@@ -975,7 +981,7 @@ class Tree:
         path = Path.wrap(self.repo, path)
         x = lib.irmin_tree_set_tree(self.repo._repo, self._tree, path._path,
                                     tree._tree)
-        check(x, False)
+        check(self.repo, x, False)
 
     def to_json(self):
         '''
@@ -1016,7 +1022,7 @@ class Store:
                                               str.encode(branch))
         else:
             self._store = lib.irmin_of_commit(self.repo._repo, branch._commit)
-        check(self._store)
+        check(repo, self._store)
 
     def __del__(self):
         lib.irmin_free(self._store)
@@ -1064,7 +1070,7 @@ class Store:
     def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
         x = ffi.irmin_remove(self._store, path._path)
-        check(x, False)
+        check(self.repo, x, False)
 
     def __contains__(self, path: PathType) -> bool:
         return self.mem(path)
@@ -1086,7 +1092,7 @@ class Store:
             info = self.info("irmin", "set")
         x = lib.irmin_set(self._store, path._path,
                           ffi.cast("IrminContents*", value._value), info._info)
-        check(x, False)
+        check(self.repo, x, False)
 
     def test_and_set(self,
                      path: PathType,
@@ -1105,6 +1111,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "set")
         return check(
+            self.repo,
             lib.irmin_test_and_set(
                 self._store, path._path,
                 ffi.cast("IrminContents*", old._value)
@@ -1123,6 +1130,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "set_tree")
         return check(
+            self.repo,
             lib.irmin_set_tree(self._store, path._path, tree._tree,
                                info._info), False)
 
@@ -1139,6 +1147,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "set_tree")
         return check(
+            self.repo,
             lib.irmin_test_and_set_tree(
                 self._store, path._path,
                 old._tree if old is not None else ffi.NULL,
@@ -1159,7 +1168,7 @@ class Store:
         '''
         c = lib.irmin_get_head(self._store)
         if c == ffi.NULL:
-            check(c)
+            check(self.repo, c)
             return None
         return Commit(self.repo, c)
 
@@ -1173,7 +1182,7 @@ class Store:
         '''
         Update the current branch to the given commit
         '''
-        return check(lib.irmin_fast_forward(self._store, c._commit), False)
+        return check(self.repo, lib.irmin_fast_forward(self._store, c._commit), False)
 
     def merge_with_branch(self,
                           branch: str,
@@ -1184,6 +1193,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "merge")
         return check(
+            self.repo,
             lib.irmin_merge_with_branch(self._store, str.encode(branch),
                                         info._info), False)
 
@@ -1196,6 +1206,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "merge commit")
         return check(
+            self.repo,
             lib.irmin_merge_with_branch(self._store, commit._commit,
                                         info._info), False)
 
@@ -1206,6 +1217,7 @@ class Store:
         if info is None:
             info = self.info("irmin", "merge store")
         return check(
+            self.repo,
             lib.irmin_merge_into(self._store, store._store, info._info), False)
 
     def list(self, path: PathType) -> List[Path]:
