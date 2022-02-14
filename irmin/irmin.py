@@ -213,7 +213,7 @@ class Type:
         '''
         Metadata type for the given repo
         '''
-        return Type(lib.irmin_typmetadata(repo._repo))
+        return Type(lib.irmin_type_metadata(repo._repo))
 
     @property
     def name(self) -> str:
