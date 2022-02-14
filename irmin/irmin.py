@@ -833,7 +833,11 @@ class Commit:
     @property
     def info(self) -> Info:
         return Info(self.repo,
-                    ffi.irmin_commit_info(self.repo._repo, self._commit))
+                    lib.irmin_commit_info(self.repo._repo, self._commit))
+
+    @property
+    def tree(self) -> 'Tree':
+        return Tree(self.repo, lib.irmin_commit_tree(self.repo._repo, self._commit))
 
     @staticmethod
     def new(repo: Repo, parents: Sequence['Commit'], tree: 'Tree',
@@ -936,7 +940,7 @@ class Tree:
 
     def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
-        x = ffi.irmin_tree_remove(self.repo._repo, self._tree, path._path)
+        x = lib.irmin_tree_remove(self.repo._repo, self._tree, path._path)
         check(self.repo, x, False)
 
     def __contains__(self, path: PathType) -> bool:
@@ -1069,7 +1073,7 @@ class Store:
 
     def remove(self, path: PathType):
         path = Path.wrap(self.repo, path)
-        x = ffi.irmin_remove(self._store, path._path)
+        x = lib.irmin_remove(self._store, path._path)
         check(self.repo, x, False)
 
     def __contains__(self, path: PathType) -> bool:

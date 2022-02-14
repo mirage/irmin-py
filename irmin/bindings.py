@@ -21,6 +21,7 @@ prefix = find_path([
 ])
 
 ffi = cffi.FFI()
+print(prefix)
 with open(os.path.join(prefix, "include", "irmin.h")) as h_file:
     lines = h_file.readlines()
     lines = [
