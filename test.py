@@ -84,6 +84,9 @@ def test_tree():
     assert (repo.path(["d"]) in paths)
     assert (str(t.hash()) == "309491aeeea8efe39b6a8412261c242379ef82f2")
 
+    d = t.to_dict()
+    assert(d == {'Node': {'key': '309491aeeea8efe39b6a8412261c242379ef82f2'}})
+
 
 def test_contents():
     repo, store = init()

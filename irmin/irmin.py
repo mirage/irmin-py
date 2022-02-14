@@ -264,9 +264,7 @@ class Value:
 
     @staticmethod
     def make(ty: Type, x):
-        x = ffi.cast("void*", x)
-        x = lib.irmin_value_clone(x)
-        return Value(x, ty)
+        return Value(lib.irmin_value_clone(ffi.cast("IrminValue*", x)), ty)
 
     @staticmethod
     def unit() -> 'Value':
@@ -993,7 +991,7 @@ class Tree:
         '''
         t = Type.tree(self.repo)
         v = Value.make(t, self._tree)
-        return v.to_json()
+        return v.to_string()
 
     def to_dict(self) -> dict:
         '''
