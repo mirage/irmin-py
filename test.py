@@ -1,5 +1,5 @@
 from irmin import Config, Store, Commit, Repo, Type, Hash, \
-                  Value, String, Path, log_level
+                  Value, String, Path, Metadata, log_level
 
 log_level("error")
 
@@ -28,7 +28,6 @@ def test_irmin_value():
     s = Value.to_string(a)
     assert (type(s) == String)
     assert (s == "true")
-
 
 def test_bytes():
     repo, store = init("bytes")
@@ -83,6 +82,7 @@ def test_tree():
     paths = store.list(["a", "b"])
     assert (repo.path(["c"]) in paths)
     assert (repo.path(["d"]) in paths)
+    assert (str(t.hash()) == "309491aeeea8efe39b6a8412261c242379ef82f2")
 
 
 def test_contents():

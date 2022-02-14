@@ -1014,6 +1014,15 @@ class Tree:
         lib.irmin_path_array_free(paths)
         return dest
 
+    def hash(self) -> Hash:
+        hash = lib.irmin_tree_hash(self.repo._repo, self._tree)
+        return Hash(self.repo, hash)
+
+    @staticmethod
+    def of_hash(hash):
+        t = lib.irmin_tree_of_hash(hash.repo._repo, hash._hash)
+        return Tree(hash.repo, t)
+
     def __del__(self):
         lib.irmin_tree_free(self._tree)
 
