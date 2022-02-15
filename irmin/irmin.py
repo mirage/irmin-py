@@ -226,6 +226,9 @@ class Type:
     def __str__(self):
         return self.name()
 
+    def __repr__(self):
+        return f'<irmin.Type name={self.name()}>'
+
     def __eq__(self, other: 'Type') -> bool:  # type: ignore
         return self.name == other.name
 
@@ -427,10 +430,14 @@ class Value:
         return Value(v, t)
 
     def __bytes__(self):
-        return self.get_bytes()
+        return self.to_bytes()
 
     def __str__(self):
-        return self.get_string()
+        return self.to_string()
+
+    def __repr__(self):
+        return f'<irmin.Value type={self.type.name()} data={self.to_string()}>'
+
 
     def __del__(self):
         lib.irmin_value_free(self._value)
@@ -482,7 +489,7 @@ def log_level(level):
 
 
 class Config:
-    def __init__(self, ptr, contents, root: Optional[str] = None):
+    def __init__(self, ptr, contents: Contents, backend: str, root: Optional[str] = None):
         '''
         Create a new config from IrminConfig pointer and contents name
         '''
@@ -490,6 +497,7 @@ class Config:
             raise IrminException("Invalid config")
         self._config = ptr
         self.contents = contents
+        self.backend = backend
         if root is not None:
             self.root(root)
 
@@ -516,7 +524,8 @@ class Config:
         '''
         return Config(lib.irmin_config_tezos(),
                       contents=content_types['bytes'],
-                      root=root)
+                      root=root,
+                      backend='tezos')
 
     @staticmethod
     def git(contents="string", root=None):
@@ -526,7 +535,8 @@ class Config:
         c = content_types[contents]
         return Config(lib.irmin_config_git(str.encode(c.name)),
                       contents=c,
-                      root=root)
+                      root=root,
+                      backend='git')
 
     @staticmethod
     def git_mem(contents="string"):
@@ -534,7 +544,7 @@ class Config:
         Configure an in-memory git store
         '''
         c = content_types[contents]
-        return Config(lib.irmin_config_git_mem(str.encode(c.name)), contents=c)
+        return Config(lib.irmin_config_git_mem(str.encode(c.name)), contents=c, backend="git-mem")
 
     @staticmethod
     def pack(contents="string", hash: Optional[str] = None, root=None):
@@ -545,7 +555,8 @@ class Config:
         h = ffi.NULL if hash is None else str.encode(hash)
         return Config(lib.irmin_config_pack(h, str.encode(c.name)),
                       contents=c,
-                      root=root)
+                      root=root,
+                      backend='pack')
 
     @staticmethod
     def mem(contents="string", hash: Optional[str] = None):
@@ -554,7 +565,7 @@ class Config:
         '''
         c = content_types[contents]
         h = ffi.NULL if hash is None else str.encode(hash)
-        return Config(lib.irmin_config_mem(h, str.encode(c.name)), contents=c)
+        return Config(lib.irmin_config_mem(h, str.encode(c.name)), contents=c, backend='mem')
 
     @staticmethod
     def fs(contents="string", hash: Optional[str] = None, root=None):
@@ -565,7 +576,10 @@ class Config:
         h = ffi.NULL if hash is None else str.encode(hash)
         return Config(lib.irmin_config_fs(h, str.encode(c.name)),
                       contents=c,
-                      root=root)
+                      root=root, backend='irf')
+
+    def __repr__(self):
+        return f'<irmin.Config backend={self.backend} contents={self.contents.name}>'
 
 
 class Repo:
@@ -618,6 +632,9 @@ class Repo:
     def __del__(self):
         lib.irmin_repo_free(self._repo)
 
+    def __repr__(self):
+        return f'<irmin.Repo backend={self.config.backend} contents={self.config.contents.name}>'
+
 
 class Metadata:
     def __init__(self, repo: Repo, ptr):
@@ -628,6 +645,9 @@ class Metadata:
     def __str__(self):
         t = Type.metadata(self.repo)
         return Value(self._metadata, t).to_string()
+
+    def __repr__(self):
+        return f'<irmin.Metadata value={str(self)}>'
 
     def __del__(self):
         lib.irmin_metadata_free(self._metadata)
@@ -685,6 +705,9 @@ class Path:
         s = lib.irmin_path_to_string(self.repo._repo, self._path)
         return String(s)
 
+    def __repr__(self):
+        return f'<irmin.Path value={str(self)}>'
+
     def __eq__(self, other: PathType) -> bool:  # type: ignore
         other = Path.wrap(self.repo, other)
         return lib.irmin_path_equal(self.repo._repo, self._path, other._path)
@@ -731,6 +754,9 @@ class CommitKey:
         t = Type.commit_key(self.repo)
         return Value.make(t, self._key).to_string()
 
+    def __repr__(self):
+        return f'<irmin.CommitKey value={str(self)}>'
+
 
 class Hash:
     def __init__(self, repo: Repo, h):
@@ -759,6 +785,9 @@ class Hash:
 
     def __del__(self):
         lib.irmin_hash_free(self._hash)
+
+    def __repr__(self):
+        return f'<irmin.Hash value={str(self)}>'
 
 
 class Info:
@@ -800,6 +829,9 @@ class Info:
 
     def __del__(self):
         lib.irmin_info_free(self._info)
+
+    def __repr__(self):
+        return f'<irmin.Info date={self.date} author={self.author} message={self.message}>'
 
 
 class Commit:
@@ -891,6 +923,9 @@ class Commit:
 
     def __str__(self):
         return self.hash.__str__()
+
+    def __repr__(self):
+        return f'<irmin.Commit hash={self.hash.__str__()} key={self.key.__str__()}>'
 
 
 class Tree:
@@ -1023,6 +1058,9 @@ class Tree:
 
     def __del__(self):
         lib.irmin_tree_free(self._tree)
+
+    def __repr__(self):
+        return f'<irmin.Tree hash={self.hash()}>'
 
 
 class Store:
@@ -1243,3 +1281,11 @@ class Store:
             dest.append(Path(self.repo, p))
         lib.irmin_path_array_free(paths)
         return dest
+
+    def __repr__(self):
+        head = self.head
+        if head is None:
+            h = 'None'
+        else:
+            h = str(head.hash)
+        return f'<irmin.Store head={h} backend={self.repo.config.backend} contents={self.repo.config.contents.name}>'
