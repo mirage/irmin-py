@@ -46,6 +46,9 @@ class String(str):
     def __del__(self):
         lib.irmin_string_free(self._ptr)
 
+    def __repr__(self):
+        return f'String("{str(self)}")'
+
 
 def error_msg(repo: 'Repo') -> Optional[String]:
     '''
@@ -96,6 +99,9 @@ class Bytes(bytes):
 
     def __del__(self):
         lib.irmin_string_free(self._ptr)
+
+    def __repr__(self):
+        return f'Bytes("{self}")'
 
 
 class Type:
@@ -227,7 +233,7 @@ class Type:
         return self.name()
 
     def __repr__(self):
-        return f'<irmin.Type name={self.name()}>'
+        return f'<irmin.Type name={self.name}>'
 
     def __eq__(self, other: 'Type') -> bool:  # type: ignore
         return self.name == other.name
@@ -436,7 +442,7 @@ class Value:
         return self.to_string()
 
     def __repr__(self):
-        return f'<irmin.Value type={self.type.name()} data={self.to_string()}>'
+        return f'<irmin.Value type={self.type.name} data={self.to_string()}>'
 
 
     def __del__(self):
