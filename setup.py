@@ -15,7 +15,7 @@ setup(
     description='Irmin bindings for Python',
     author='Zach Shipko',
     author_email='zachshipko@gmail.com',
-    url='https://github.com/zshipko/libirmin',
+    url='https://github.com/mirage/irmin-py',
     packages=['irmin'],
     # package_dir={'': 'irmin'},
     # package_data={'': ['./libirmin.so', './irmin.h']},
