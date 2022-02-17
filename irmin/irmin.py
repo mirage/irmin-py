@@ -1068,6 +1068,31 @@ class Tree:
     def __repr__(self):
         return f'<irmin.Tree hash={self.hash()}>'
 
+class Remote:
+    def __init__(self, repo: Repo, ptr):
+        self.repo = repo
+        self._remote = ptr
+        check(repo, self._remote)
+
+    @staticmethod
+    def store(store: 'Store'):
+        ptr = lib.irmin_remote_store(store.repo._repo, store)
+        return Remote(store.repo, ptr)
+
+    @staticmethod
+    def url(repo: Repo, url: str, user: Optional[str] = None, token: Optional[str] = None):
+        if user is not None:
+            user = user.encode()
+            token = ffi.NULL if token is None else token.encode()
+            ptr = lib.irmin_remote_with_auth(repo._repo, url.encode(), user, token)
+        else:
+            ptr = lib.irmin_remote(repo._repo, url.encode())
+        return Remote(repo, ptr)
+
+
+    def __del__(self):
+        lib.irmin_remote_free(self._remote)
+
 
 class Store:
     def __init__(self, repo: Repo, branch: Union[str, Commit] = "main"):
@@ -1287,6 +1312,54 @@ class Store:
             dest.append(Path(self.repo, p))
         lib.irmin_path_array_free(paths)
         return dest
+
+    def fetch(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+        if isinstance(remote, str):
+            remote = Remote.url(self.repo, remote)
+        elif isinstance(remote, Store):
+            remote = Remote.store(remote)
+        elif not isinstance(remote, Remote):
+            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+        c = lib.irmin_fetch(self._store, depth, remote._remote)
+        if c == ffi.NULL:
+            err = error_msg(self.repo)
+            if err is not None:
+                raise IrminException(err)
+            return None
+        return Commit(self.repo, c)
+
+    def pull(self, remote: Union[str, 'Store', Remote], depth=-1, info=None) -> Optional[Commit]:
+        if isinstance(remote, str):
+            remote = Remote.url(self.repo, remote)
+        elif isinstance(remote, Store):
+            remote = Remote.store(remote)
+        elif not isinstance(remote, Remote):
+            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+        info_p = ffi.NULL if info is None else info._info
+        c = lib.irmin_pull(self._store, depth, remote._remote, info_p)
+        if c == ffi.NULL:
+            print("D")
+            err = error_msg(self.repo)
+            print(err)
+            if err is not None:
+                raise IrminException(err)
+            return None
+        return Commit(self.repo, c)
+
+    def push(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+        if isinstance(remote, str):
+            remote = Remote.url(self.repo, remote)
+        elif isinstance(remote, Store):
+            remote = Remote.store(remote)
+        elif not isinstance(remote, Remote):
+            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+        c = lib.irmin_push(self._store, depth, remote._remote)
+        if c == ffi.NULL:
+            err = error_msg(self.repo)
+            if err is not None:
+                raise IrminException(err)
+            return None
+        return Commit(self.repo, c)
 
     def __repr__(self):
         head = self.head
