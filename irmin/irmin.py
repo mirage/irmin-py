@@ -1069,15 +1069,16 @@ class Tree:
         return f'<irmin.Tree hash={self.hash()}>'
 
 class Remote:
-    def __init__(self, repo: Repo, ptr):
+    def __init__(self, repo: Repo, ptr, url: Optional[str]):
         self.repo = repo
         self._remote = ptr
+        self._url = url
         check(repo, self._remote)
 
     @staticmethod
     def store(store: 'Store'):
         ptr = lib.irmin_remote_store(store.repo._repo, store)
-        return Remote(store.repo, ptr)
+        return Remote(store.repo, ptr, None)
 
     @staticmethod
     def url(repo: Repo, url: str, user: Optional[str] = None, token: Optional[str] = None):
@@ -1087,8 +1088,13 @@ class Remote:
             ptr = lib.irmin_remote_with_auth(repo._repo, url.encode(), user, token)
         else:
             ptr = lib.irmin_remote(repo._repo, url.encode())
-        return Remote(repo, ptr)
+        return Remote(repo, ptr, url)
 
+    def __repr__(self):
+        if self._url is None:
+            return f'<irmin.Remote url={self._url}>'
+        else:
+            return '<irmin.Remote>'
 
     def __del__(self):
         lib.irmin_remote_free(self._remote)
@@ -1338,9 +1344,7 @@ class Store:
         info_p = ffi.NULL if info is None else info._info
         c = lib.irmin_pull(self._store, depth, remote._remote, info_p)
         if c == ffi.NULL:
-            print("D")
             err = error_msg(self.repo)
-            print(err)
             if err is not None:
                 raise IrminException(err)
             return None
