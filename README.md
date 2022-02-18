@@ -36,5 +36,5 @@ variable.
 Run the tests:
 
 ```
-$ py.test test.py
+$ pytest
 ```
