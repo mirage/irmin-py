@@ -11,14 +11,12 @@ class build(_build):
 
 setup(
     name='irmin',
-    version='0.1',
+    version='0.1.0b0',
     description='Irmin bindings for Python',
     author='Zach Shipko',
     author_email='zachshipko@gmail.com',
     url='https://github.com/mirage/irmin-py',
     packages=['irmin'],
-    # package_dir={'': 'irmin'},
-    # package_data={'': ['./libirmin.so', './irmin.h']},
     install_requires=["cffi>=1.0.0"],
     include_package_data=True,
     cmdclass={'build': build})
