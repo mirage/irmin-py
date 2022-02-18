@@ -1,5 +1,6 @@
 from irmin import Config, Store, Commit, Repo, Type, Hash, \
-                  Value, String, Path, Metadata, log_level
+                  Value, String, log_level
+import shutil
 
 log_level("error")
 
@@ -95,3 +96,13 @@ def test_contents():
     hash = repo.hash_contents({"foo": "bar"})
     v = repo.contents_of_hash(hash)
     assert (v == {"foo": "bar"})
+
+def test_pull_url():
+    shutil.rmtree("/tmp/irmin-py-test", ignore_errors=True)
+    config = Config.git(root="/tmp/irmin-py-test")
+    repo = Repo(config)
+    store = Store(repo)
+    head = store.pull("https://github.com/mirage/irmin-py")
+    assert(head is not None)
+    assert(["README.md"] in store)
+
