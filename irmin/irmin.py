@@ -996,7 +996,7 @@ class Tree:
         path = Path.wrap(self.repo, path)
         return lib.irmin_tree_mem_tree(self.repo._repo, self._tree, path._path)
 
-    def tree(self, path: PathType):
+    def tree(self, path: PathType) -> Optional['Tree']:
         '''
         Get the tree at the given path
         '''
@@ -1006,7 +1006,7 @@ class Tree:
             return None
         return Tree(self.repo, x)
 
-    def metadata(self, path: PathType):
+    def metadata(self, path: PathType) -> Optional[Metadata]:
         '''
         Get metadata at the given path
         '''
@@ -1026,7 +1026,7 @@ class Tree:
                                     tree._tree)
         check(self.repo, x, False)
 
-    def to_json(self):
+    def to_json(self) -> str:
         '''
         Convert to JSON representation
         '''
@@ -1041,6 +1041,9 @@ class Tree:
         return json.loads(self.to_json())
 
     def list(self, path: PathType) -> List[Path]:
+        '''
+        List paths
+        '''
         path = Path.wrap(self.repo, path)
         paths = lib.irmin_tree_list(self.repo._repo, self._tree, path._path)
         n = lib.irmin_path_array_length(self.repo._repo, paths)
@@ -1054,12 +1057,20 @@ class Tree:
         return dest
 
     def hash(self) -> Hash:
+        '''
+        Get hash of tree
+        '''
         hash = lib.irmin_tree_hash(self.repo._repo, self._tree)
         return Hash(self.repo, hash)
 
     @staticmethod
-    def of_hash(hash):
+    def of_hash(hash) -> Optional['Tree']:
+        '''
+        Get tree from hash
+        '''
         t = lib.irmin_tree_of_hash(hash.repo._repo, hash._hash)
+        if t == ffi.NULL:
+            return None
         return Tree(hash.repo, t)
 
     def __del__(self):
@@ -1070,18 +1081,27 @@ class Tree:
 
 class Remote:
     def __init__(self, repo: Repo, ptr, url: Optional[str]):
+        '''
+        See Remote.store and Remote.url
+        '''
         self.repo = repo
         self._remote = ptr
         self._url = url
         check(repo, self._remote)
 
     @staticmethod
-    def store(store: 'Store'):
+    def store(store: 'Store') -> 'Remote':
+        '''
+        Remote store on disk
+        '''
         ptr = lib.irmin_remote_store(store.repo._repo, store)
         return Remote(store.repo, ptr, None)
 
     @staticmethod
-    def url(repo: Repo, url: str, user: Optional[str] = None, token: Optional[str] = None):
+    def url(repo: Repo, url: str, user: Optional[str] = None, token: Optional[str] = None) -> 'Remote':
+        '''
+        Remote URL
+        '''
         if user is not None:
             user = user.encode()
             token = ffi.NULL if token is None else token.encode()
@@ -1135,7 +1155,7 @@ class Store:
             return None
         return Tree(self.repo, x)
 
-    def metadata(self, path: PathType):
+    def metadata(self, path: PathType) -> Optional[Metadata]:
         '''
         Get metadata at the given path
         '''
@@ -1307,6 +1327,9 @@ class Store:
             lib.irmin_merge_into(self._store, store._store, info._info), False)
 
     def list(self, path: PathType) -> List[Path]:
+        '''
+        Get a list of paths
+        '''
         path = Path.wrap(self.repo, path)
         paths = lib.irmin_list(self._store, path._path)
         n = lib.irmin_path_array_length(self.repo._repo, paths)
@@ -1320,6 +1343,9 @@ class Store:
         return dest
 
     def fetch(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+        '''
+        Fetch data from remote repo
+        '''
         if isinstance(remote, str):
             remote = Remote.url(self.repo, remote)
         elif isinstance(remote, Store):
@@ -1335,6 +1361,9 @@ class Store:
         return Commit(self.repo, c)
 
     def pull(self, remote: Union[str, 'Store', Remote], depth=-1, info=None) -> Optional[Commit]:
+        '''
+        Pull data from remote repo, if `info` is not `None` then a merge commit will be created
+        '''
         if isinstance(remote, str):
             remote = Remote.url(self.repo, remote)
         elif isinstance(remote, Store):
@@ -1351,6 +1380,9 @@ class Store:
         return Commit(self.repo, c)
 
     def push(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+        '''
+        Push data to remote repo
+        '''
         if isinstance(remote, str):
             remote = Remote.url(self.repo, remote)
         elif isinstance(remote, Store):
