@@ -11,6 +11,9 @@ class IrminException(Exception):
 
 
 class String(str):
+    '''
+    Wrapper for OCaml string
+    '''
     _length: int
     _buffer: Any
     _ptr: ffi.CData
@@ -69,6 +72,9 @@ def check(repo, res, value=ffi.NULL):
 
 
 class Bytes(bytes):
+    '''
+    Wrapper for OCaml bytes
+    '''
     _length: int
     _ptr: ffi.CData
 
@@ -100,14 +106,12 @@ class Bytes(bytes):
     def __del__(self):
         lib.irmin_string_free(self._ptr)
 
-    def __repr__(self):
-        return f'Bytes("{self}")'
-
 
 class Type:
     '''
     Wrapper for Irmin.Type
     '''
+
     def __init__(self, ptr):
         '''
         Create a Type from IrminType pointer
@@ -246,6 +250,7 @@ class Value:
     '''
     Wrapper for OCaml values that correspond with Type
     '''
+
     def __init__(self, ptr, ty: Type):
         '''
         Create new value from pointer and Type
@@ -260,19 +265,28 @@ class Value:
                                      other._value)
 
     @staticmethod
-    def contents_of_hash(repo: 'Repo', h: 'Hash'):
+    def contents_of_hash(repo: 'Repo', h: 'Hash') -> Optional['Value']:
+        '''
+        Find the contents that correspond with the provided hash, or return None
+        '''
         t = Type.contents(repo)
         r = lib.irmin_contents_of_hash(repo._repo, h._hash)
         if r == ffi.NULL:
             return None
         return Value(r, t)
 
-    def hash_contents(self, repo: 'Repo'):
+    def hash_contents(self, repo: 'Repo') -> 'Hash':
+        '''
+        Get hash of contents value
+        '''
         h = lib.irmin_contents_hash(repo._repo, self._value)
         return Hash(repo, h)
 
     @staticmethod
     def make(ty: Type, x):
+        '''
+        Clone a value and cast the the given type
+        '''
         return Value(lib.irmin_value_clone(ffi.cast("IrminValue*", x)), ty)
 
     @staticmethod
@@ -337,7 +351,10 @@ class Value:
         s = str.encode(json.dumps(d))
         return Value(lib.irmin_value_of_string(t._type, s, len(s)), t)
 
-    def wrap(x: Any):
+    def wrap(x: Any) -> 'Value':
+        '''
+        Try to convert a python value to OCaml representation
+        '''
         if isinstance(x, bool):
             return Value.bool(x)
         elif isinstance(x, int):
@@ -444,12 +461,15 @@ class Value:
     def __repr__(self):
         return f'<irmin.Value type={self.type.name} data={self.to_string()}>'
 
-
     def __del__(self):
         lib.irmin_value_free(self._value)
 
 
 class Contents:
+    '''
+    Converts between Python values and Irmin Contents
+    '''
+
     def __init__(self, name, to_value, from_value, ty, py_ty):
         self.name = name
         self.type = py_ty
@@ -461,11 +481,17 @@ class Contents:
         return ffi.cast("IrminContents*", v._value)
 
     def hash(self, repo, v):
+        '''
+        Get contents hash
+        '''
         v = self.to_value(v)
         h = lib.irmin_contents_hash(repo._repo, self._as_contents(v))
         return Hash(repo, h)
 
     def of_hash(self, repo, h: 'Hash'):
+        '''
+        Find contents from hash
+        '''
         v = lib.irmin_contents_of_hash(repo._repo, h._hash)
         v = Value(ffi.cast("IrminValue*", v), self.irmin_type)
         return self.from_value(v)
@@ -495,7 +521,12 @@ def log_level(level):
 
 
 class Config:
-    def __init__(self, ptr, contents: Contents, backend: str, root: Optional[str] = None):
+
+    def __init__(self,
+                 ptr,
+                 contents: Contents,
+                 backend: str,
+                 root: Optional[str] = None):
         '''
         Create a new config from IrminConfig pointer and contents name
         '''
@@ -516,6 +547,9 @@ class Config:
                              value._value)
 
     def __setitem__(self, key: str, value: Any):
+        '''
+        Set config key
+        '''
         value = Value.wrap(value)
         lib.irmin_config_set(self._config, str.encode(key), value.type._type,
                              value._value)
@@ -550,7 +584,9 @@ class Config:
         Configure an in-memory git store
         '''
         c = content_types[contents]
-        return Config(lib.irmin_config_git_mem(str.encode(c.name)), contents=c, backend="git-mem")
+        return Config(lib.irmin_config_git_mem(str.encode(c.name)),
+                      contents=c,
+                      backend="git-mem")
 
     @staticmethod
     def pack(contents="string", hash: Optional[str] = None, root=None):
@@ -571,7 +607,9 @@ class Config:
         '''
         c = content_types[contents]
         h = ffi.NULL if hash is None else str.encode(hash)
-        return Config(lib.irmin_config_mem(h, str.encode(c.name)), contents=c, backend='mem')
+        return Config(lib.irmin_config_mem(h, str.encode(c.name)),
+                      contents=c,
+                      backend='mem')
 
     @staticmethod
     def fs(contents="string", hash: Optional[str] = None, root=None):
@@ -582,13 +620,15 @@ class Config:
         h = ffi.NULL if hash is None else str.encode(hash)
         return Config(lib.irmin_config_fs(h, str.encode(c.name)),
                       contents=c,
-                      root=root, backend='irf')
+                      root=root,
+                      backend='irf')
 
     def __repr__(self):
         return f'<irmin.Config backend={self.backend} contents={self.contents.name}>'
 
 
 class Repo:
+
     def __init__(self, config: Config):
         '''
         Create repo from Config
@@ -599,22 +639,40 @@ class Repo:
             raise IrminException("Unable to create repo")
 
     def contents_of_hash(self, h):
+        '''
+        Find contents that correspond with the given hash
+        '''
         return self.config.contents.of_hash(self, h)
 
     def hash_contents(self, c):
+        '''
+        Generate hash for contents
+        '''
         return self.config.contents.hash(self, c)
 
     def type(self):
+        '''
+        Get contents type
+        '''
         return self.config.contents.type
 
     def irmin_type(self):
+        '''
+        Get contents OCaml type
+        '''
         return self.config.contents.irmin_type
 
     def error_msg(self) -> Optional[String]:
+        '''
+        Get the current error message
+        '''
         return error_msg(self)
 
     @property
-    def branches(self):
+    def branches(self) -> List[String]:
+        '''
+        List all available branches
+        '''
         b = lib.irmin_repo_branches(self._repo)
         n = lib.irmin_branch_array_length(self._repo, b)
         dest = []
@@ -623,16 +681,29 @@ class Repo:
         lib.irmin_branch_array_free(b)
         return dest
 
-    def path(self, p):
+    def path(self, p) -> 'Path':
+        '''
+        Create a new path
+        '''
         return Path.wrap(self, p)
 
-    def info(self, author, message):
+    def info(self, author, message) -> 'Info':
+        '''
+        Create new info
+        '''
         return Info(self, author, message)
 
-    def commit(self, parents: Sequence['Commit'], tree: 'Tree', info: 'Info'):
+    def commit(self, parents: Sequence['Commit'], tree: 'Tree',
+               info: 'Info') -> 'Commit':
+        '''
+        Create new commit
+        '''
         return Commit.new(self, parents, tree, info)
 
-    def tree(self):
+    def tree(self) -> 'Tree':
+        '''
+        Create an empty tree
+        '''
         return Tree(self)
 
     def __del__(self):
@@ -643,6 +714,7 @@ class Repo:
 
 
 class Metadata:
+
     def __init__(self, repo: Repo, ptr):
         check(repo, ptr)
         self._metadata = ptr
@@ -660,6 +732,7 @@ class Metadata:
 
 
 class Path:
+
     def __init__(self, repo: Repo, ptr):
         '''
         Create a new path for the given repo using a list of str objects
@@ -738,6 +811,7 @@ class Path:
 
 
 class CommitKey:
+
     def __init__(self, repo: Repo, c):
         check(repo, c)
         self.repo = repo
@@ -765,6 +839,7 @@ class CommitKey:
 
 
 class Hash:
+
     def __init__(self, repo: Repo, h):
         check(repo, h)
         self.repo = repo
@@ -797,6 +872,7 @@ class Hash:
 
 
 class Info:
+
     def __init__(self, repo: Repo, i, message=None):
         '''
         Create info from repo and IrminInfo pointer
@@ -841,6 +917,7 @@ class Info:
 
 
 class Commit:
+
     def __init__(self, repo: Repo, c):
         check(repo, c)
         self.repo = repo
@@ -873,11 +950,12 @@ class Commit:
 
     @property
     def tree(self) -> 'Tree':
-        return Tree(self.repo, lib.irmin_commit_tree(self.repo._repo, self._commit))
+        return Tree(self.repo,
+                    lib.irmin_commit_tree(self.repo._repo, self._commit))
 
     @staticmethod
     def new(repo: Repo, parents: Sequence['Commit'], tree: 'Tree',
-            info: Info) -> Optional['Commit']:
+            info: Info) -> 'Commit':
         '''
         Create a new commit
         '''
@@ -885,8 +963,7 @@ class Commit:
         a = [ffi.new("IrminCommit*", arg._commit) for arg in parents]
         b = ffi.new("IrminCommit*[]", a)
         c = lib.irmin_commit_new(repo._repo, b, n, tree._tree, info._info)
-        if c == ffi.NULL:
-            return None
+        check(repo, c)
         return Commit(repo, c)
 
     @staticmethod
@@ -935,6 +1012,7 @@ class Commit:
 
 
 class Tree:
+
     def __init__(self, repo: Repo, t=None):
         '''
         Create a tree
@@ -1079,7 +1157,9 @@ class Tree:
     def __repr__(self):
         return f'<irmin.Tree hash={self.hash()}>'
 
+
 class Remote:
+
     def __init__(self, repo: Repo, ptr, url: Optional[str]):
         '''
         See Remote.store and Remote.url
@@ -1098,14 +1178,17 @@ class Remote:
         return Remote(store.repo, ptr, None)
 
     @staticmethod
-    def url(repo: Repo, url: str, user: Optional[str] = None, token: Optional[str] = None) -> 'Remote':
+    def url(repo: Repo,
+            url: str,
+            user: Optional[str] = None,
+            token: Optional[str] = None) -> 'Remote':
         '''
         Remote URL
         '''
         if user is not None:
-            user = user.encode()
-            token = ffi.NULL if token is None else token.encode()
-            ptr = lib.irmin_remote_with_auth(repo._repo, url.encode(), user, token)
+            u = user.encode()
+            t = ffi.NULL if token is None else token.encode()
+            ptr = lib.irmin_remote_with_auth(repo._repo, url.encode(), u, t)
         else:
             ptr = lib.irmin_remote(repo._repo, url.encode())
         return Remote(repo, ptr, url)
@@ -1121,6 +1204,7 @@ class Remote:
 
 
 class Store:
+
     def __init__(self, repo: Repo, branch: Union[str, Commit] = "main"):
         self.repo = repo
         if isinstance(branch, str):
@@ -1288,7 +1372,8 @@ class Store:
         '''
         Update the current branch to the given commit
         '''
-        return check(self.repo, lib.irmin_fast_forward(self._store, c._commit), False)
+        return check(self.repo, lib.irmin_fast_forward(self._store, c._commit),
+                     False)
 
     def merge_with_branch(self,
                           branch: str,
@@ -1342,7 +1427,9 @@ class Store:
         lib.irmin_path_array_free(paths)
         return dest
 
-    def fetch(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+    def fetch(self,
+              remote: Union[str, 'Store', Remote],
+              depth=-1) -> Optional[Commit]:
         '''
         Fetch data from remote repo
         '''
@@ -1351,7 +1438,8 @@ class Store:
         elif isinstance(remote, Store):
             remote = Remote.store(remote)
         elif not isinstance(remote, Remote):
-            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+            raise TypeError("Invalid type for remote argument: " +
+                            str(type(remote)))
         c = lib.irmin_fetch(self._store, depth, remote._remote)
         if c == ffi.NULL:
             err = error_msg(self.repo)
@@ -1360,7 +1448,10 @@ class Store:
             return None
         return Commit(self.repo, c)
 
-    def pull(self, remote: Union[str, 'Store', Remote], depth=-1, info=None) -> Optional[Commit]:
+    def pull(self,
+             remote: Union[str, 'Store', Remote],
+             depth=-1,
+             info=None) -> Optional[Commit]:
         '''
         Pull data from remote repo, if `info` is not `None` then a merge commit will be created
         '''
@@ -1369,7 +1460,8 @@ class Store:
         elif isinstance(remote, Store):
             remote = Remote.store(remote)
         elif not isinstance(remote, Remote):
-            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+            raise TypeError("Invalid type for remote argument: " +
+                            str(type(remote)))
         info_p = ffi.NULL if info is None else info._info
         c = lib.irmin_pull(self._store, depth, remote._remote, info_p)
         if c == ffi.NULL:
@@ -1379,7 +1471,9 @@ class Store:
             return None
         return Commit(self.repo, c)
 
-    def push(self, remote: Union[str, 'Store', Remote], depth=-1) -> Optional[Commit]:
+    def push(self,
+             remote: Union[str, 'Store', Remote],
+             depth=-1) -> Optional[Commit]:
         '''
         Push data to remote repo
         '''
@@ -1388,7 +1482,8 @@ class Store:
         elif isinstance(remote, Store):
             remote = Remote.store(remote)
         elif not isinstance(remote, Remote):
-            raise TypeError("Invalid type for remote argument: " + str(type(remote)))
+            raise TypeError("Invalid type for remote argument: " +
+                            str(type(remote)))
         c = lib.irmin_push(self._store, depth, remote._remote)
         if c == ffi.NULL:
             err = error_msg(self.repo)
