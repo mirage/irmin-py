@@ -653,13 +653,13 @@ class Repo:
         if self._repo == ffi.NULL:
             raise IrminError("Unable to create repo")
 
-    def contents_of_hash(self, h: 'Hash'):
+    def contents_of_hash(self, h: "Hash"):
         """
         Find contents that correspond with the given hash
         """
         return self.config.contents.of_hash(self, h)
 
-    def hash_contents(self, c) -> 'Hash':
+    def hash_contents(self, c) -> "Hash":
         """
         Generate hash for contents
         """
