@@ -2,7 +2,7 @@ from util import *
 from irmin import *
 import sys
 
-if len(sys.argv)< 3:
+if len(sys.argv) < 3:
     print("usage: python3 tezos.py /path/to/tezos/context <commit-hash>")
     sys.exit(0)
 
@@ -23,9 +23,9 @@ store = Store(repo, branch=commit)
 
 
 def list_path(store, path):
-    '''
+    """
     Prints all content paths
-    '''
+    """
     for k in store.list(path):
         p = path.append(k)
         if p in store:
