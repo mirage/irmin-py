@@ -8,7 +8,7 @@ def find_path(paths):
             os.path.join(prefix, "lib", "libirmin.so")
         ) and os.path.exists(os.path.join(prefix, "include", "irmin.h")):
             return prefix
-    raise Exception("Unable to detect libirmin path, try setting LIBIRMIN_PREFIX")
+    return None
 
 
 prefix = find_path(
@@ -21,6 +21,9 @@ prefix = find_path(
         "/usr",
     ]
 )
+
+if prefix is None:
+    raise Exception("Unable to detect libirmin path, try setting LIBIRMIN_PREFIX")
 
 ffi = cffi.FFI()
 with open(os.path.join(prefix, "include", "irmin.h")) as h_file:
