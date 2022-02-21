@@ -1,9 +1,11 @@
 from .bindings import ffi, lib  # type: ignore
 
-from typing import Optional, Sequence, Any, List, Union
+from typing import Optional, Sequence, Any, List, Union, Callable, TypeVar
 import json
 
 PathType = Union["Path", str, Sequence[str]]
+
+T = TypeVar("T")
 
 
 class IrminError(Exception):
@@ -44,13 +46,13 @@ class String(str):
     def __bytes__(self) -> bytes:
         return bytes(self._buffer)
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         return bytes(self)
 
     def __del__(self):
         lib.irmin_string_free(self._ptr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'String("{str(self)}")'
 
 
@@ -88,7 +90,6 @@ class Bytes(bytes):
             cls._ptr = lib.irmin_string_new(ptr, len(ptr))
         else:
             cls._ptr = ptr
-
         if cls._ptr == ffi.NULL:
             raise IrminError("NULL bytes")
         length = lib.irmin_string_length(cls._ptr)
@@ -99,7 +100,7 @@ class Bytes(bytes):
         t._length = length
         return t
 
-    def to_string(self):
+    def to_string(self) -> str:
         return bytes.decode(self)
 
     def __len__(self) -> int:
@@ -235,10 +236,10 @@ class Type:
         s = lib.irmin_type_name(self._type)
         return String(s)
 
-    def __str__(self):
-        return self.name()
+    def __str__(self) -> str:
+        return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<irmin.Type name={self.name}>"
 
     def __eq__(self, other: "Type") -> bool:  # type: ignore
@@ -456,10 +457,10 @@ class Value:
     def __bytes__(self):
         return self.to_bytes()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_string()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<irmin.Value type={self.type.name} data={self.to_string()}>"
 
     def __del__(self):
@@ -471,7 +472,14 @@ class Contents:
     Converts between Python values and Irmin Contents
     """
 
-    def __init__(self, name, to_value, from_value, ty, py_ty):
+    def __init__(
+        self,
+        name: str,
+        to_value: Callable[[T], Value],
+        from_value: Callable[[Value], T],
+        ty: Type,
+        py_ty: object,
+    ):
         self.name = name
         self.type = py_ty
         self.to_value = to_value
@@ -512,7 +520,7 @@ content_types = {
 }
 
 
-def log_level(level):
+def log_level(level: Optional[str]):
     """
     Update Irmin log level
     """
@@ -557,7 +565,7 @@ class Config:
         lib.irmin_config_free(self._config)
 
     @staticmethod
-    def tezos(root=None):
+    def tezos(root=None) -> "Config":
         """
         Configure a tezos context store
         """
@@ -569,7 +577,7 @@ class Config:
         )
 
     @staticmethod
-    def git(contents="string", root=None):
+    def git(contents="string", root=None) -> "Config":
         """
         Configure an on-disk git store
         """
@@ -582,7 +590,7 @@ class Config:
         )
 
     @staticmethod
-    def git_mem(contents="string"):
+    def git_mem(contents="string") -> "Config":
         """
         Configure an in-memory git store
         """
@@ -592,7 +600,7 @@ class Config:
         )
 
     @staticmethod
-    def pack(contents="string", hash: Optional[str] = None, root=None):
+    def pack(contents="string", hash: Optional[str] = None, root=None) -> "Config":
         """
         Configure an Irmin_pack store
         """
@@ -606,7 +614,7 @@ class Config:
         )
 
     @staticmethod
-    def mem(contents="string", hash: Optional[str] = None):
+    def mem(contents="string", hash: Optional[str] = None) -> "Config":
         """
         Configure an in-memory store
         """
@@ -617,7 +625,7 @@ class Config:
         )
 
     @staticmethod
-    def fs(contents="string", hash: Optional[str] = None, root=None):
+    def fs(contents="string", hash: Optional[str] = None, root=None) -> "Config":
         """
         Configure store using Irmin_fs
         """
@@ -645,13 +653,13 @@ class Repo:
         if self._repo == ffi.NULL:
             raise IrminError("Unable to create repo")
 
-    def contents_of_hash(self, h):
+    def contents_of_hash(self, h: 'Hash'):
         """
         Find contents that correspond with the given hash
         """
         return self.config.contents.of_hash(self, h)
 
-    def hash_contents(self, c):
+    def hash_contents(self, c) -> 'Hash':
         """
         Generate hash for contents
         """
@@ -663,7 +671,7 @@ class Repo:
         """
         return self.config.contents.type
 
-    def irmin_type(self):
+    def irmin_type(self) -> Type:
         """
         Get contents OCaml type
         """
@@ -694,7 +702,7 @@ class Repo:
         """
         return Path.wrap(self, p)
 
-    def info(self, author, message) -> "Info":
+    def info(self, author: str, message: str) -> "Info":
         """
         Create new info
         """
