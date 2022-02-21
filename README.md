@@ -21,8 +21,14 @@ $ pip3 install git+https://github.com/mirage/irmin-py.git --user
 
 Or from the root of the project:
 
+Using pip:
 ```
 $ pip3 install . --user
+```
+
+Using poetry:
+```
+$ POETRY_VIRTUALENVS_CREATE=false poetry install
 ```
 
 And the build script should be able to find the location of the `libirmin` library and header files.
@@ -36,5 +42,5 @@ variable.
 Run the tests:
 
 ```
-$ pytest
+$ poetry run pytest
 ```
