@@ -18,6 +18,7 @@ prefix = find_path([
     os.path.dirname(__file__),
     os.path.expanduser("~/.local"),
     "/usr/local",
+    "/usr",
 ])
 
 ffi = cffi.FFI()
@@ -26,7 +27,6 @@ with open(os.path.join(prefix, "include", "irmin.h")) as h_file:
     lines = [
         line for line in lines if '#' not in line and 'static' not in line
     ]
-    lines.append("void free(void*);")
     ffi.cdef('\n'.join(lines))
 
 lib = ffi.dlopen(os.path.join(prefix, "lib", "libirmin.so"))
