@@ -6,7 +6,7 @@ import json
 PathType = Union['Path', str, Sequence[str]]
 
 
-class IrminException(Exception):
+class IrminError(Exception):
     pass
 
 
@@ -27,7 +27,7 @@ class String(str):
         else:
             cls._ptr = ptr
         if cls._ptr == ffi.NULL:
-            raise IrminException("NULL string")
+            raise IrminError("NULL string")
         length = lib.irmin_string_length(cls._ptr)
         s = lib.irmin_string_data(cls._ptr)
         b = ffi.buffer(s, length)
@@ -67,7 +67,7 @@ def check(repo, res, value=ffi.NULL):
     if res == value:
         err = error_msg(repo)
         if err is not None:
-            raise IrminException(err)
+            raise IrminError(err)
     return res
 
 
@@ -88,7 +88,7 @@ class Bytes(bytes):
             cls._ptr = ptr
 
         if cls._ptr == ffi.NULL:
-            raise IrminException("NULL bytes")
+            raise IrminError("NULL bytes")
         length = lib.irmin_string_length(cls._ptr)
         s = lib.irmin_string_data(cls._ptr)
         b = ffi.buffer(s, length)
@@ -117,7 +117,7 @@ class Type:
         Create a Type from IrminType pointer
         '''
         if ptr == ffi.NULL:
-            raise IrminException("Bad type")
+            raise IrminError("Bad type")
         self._type = ptr
 
     @staticmethod
@@ -256,7 +256,7 @@ class Value:
         Create new value from pointer and Type
         '''
         if ptr == ffi.NULL:
-            raise IrminException("Bad value")
+            raise IrminError("Bad value")
         self.type = ty
         self._value = ptr
 
@@ -531,7 +531,7 @@ class Config:
         Create a new config from IrminConfig pointer and contents name
         '''
         if ptr == ffi.NULL:
-            raise IrminException("Invalid config")
+            raise IrminError("Invalid config")
         self._config = ptr
         self.contents = contents
         self.backend = backend
@@ -636,7 +636,7 @@ class Repo:
         self.config = config
         self._repo = lib.irmin_repo_new(self.config._config)
         if self._repo == ffi.NULL:
-            raise IrminException("Unable to create repo")
+            raise IrminError("Unable to create repo")
 
     def contents_of_hash(self, h):
         '''
@@ -748,7 +748,7 @@ class Path:
             b = str.encode(ptr)
             ptr = lib.irmin_path_of_string(repo._repo, b, len(b))
         elif not isinstance(ptr, ffi.CData):
-            raise IrminException("Invalid path type: " + str(type(ptr)))
+            raise IrminError("Invalid path type: " + str(type(ptr)))
         check(repo, ptr)
         self._path = ptr
 
@@ -1444,7 +1444,7 @@ class Store:
         if c == ffi.NULL:
             err = error_msg(self.repo)
             if err is not None:
-                raise IrminException(err)
+                raise IrminError(err)
             return None
         return Commit(self.repo, c)
 
@@ -1467,7 +1467,7 @@ class Store:
         if c == ffi.NULL:
             err = error_msg(self.repo)
             if err is not None:
-                raise IrminException(err)
+                raise IrminError(err)
             return None
         return Commit(self.repo, c)
 
@@ -1488,7 +1488,7 @@ class Store:
         if c == ffi.NULL:
             err = error_msg(self.repo)
             if err is not None:
-                raise IrminException(err)
+                raise IrminError(err)
             return None
         return Commit(self.repo, c)
 
