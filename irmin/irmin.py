@@ -70,7 +70,6 @@ def check(repo, res, value=ffi.NULL):
             raise IrminError(err)
     return res
 
-
 class Bytes(bytes):
     '''
     Wrapper for OCaml bytes
@@ -1442,9 +1441,7 @@ class Store:
                             str(type(remote)))
         c = lib.irmin_fetch(self._store, depth, remote._remote)
         if c == ffi.NULL:
-            err = error_msg(self.repo)
-            if err is not None:
-                raise IrminError(err)
+            check(self.repo, c)
             return None
         return Commit(self.repo, c)
 
@@ -1465,9 +1462,7 @@ class Store:
         info_p = ffi.NULL if info is None else info._info
         c = lib.irmin_pull(self._store, depth, remote._remote, info_p)
         if c == ffi.NULL:
-            err = error_msg(self.repo)
-            if err is not None:
-                raise IrminError(err)
+            check(self.repo, c)
             return None
         return Commit(self.repo, c)
 
@@ -1486,9 +1481,7 @@ class Store:
                             str(type(remote)))
         c = lib.irmin_push(self._store, depth, remote._remote)
         if c == ffi.NULL:
-            err = error_msg(self.repo)
-            if err is not None:
-                raise IrminError(err)
+            check(self.repo, c)
             return None
         return Commit(self.repo, c)
 
