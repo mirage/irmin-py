@@ -16,6 +16,12 @@ by an application written in OCaml.
 After installing [libirmin](https://github.com/mirage/irmin) using opam, you can run:
 
 ```
+$ pip3 install irmin --user
+```
+
+To install the development version:
+
+```
 $ pip3 install git+https://github.com/mirage/irmin-py.git --user
 ```
 
