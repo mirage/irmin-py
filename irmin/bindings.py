@@ -23,7 +23,10 @@ prefix = find_path(
 )
 
 if prefix is None:
-    raise Exception("Unable to detect libirmin path, try setting LIBIRMIN_PREFIX")
+    raise Exception(
+        "Unable to detect libirmin path, try installing libirmin"
+        "using `opam install libirmin` or setting LIBIRMIN_PREFIX"
+    )
 
 ffi = cffi.FFI()
 with open(os.path.join(prefix, "include", "irmin.h")) as h_file:
