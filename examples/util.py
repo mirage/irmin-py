@@ -1,5 +1,5 @@
 import sys
 
-sys.path.extend(['.', '..'])
+sys.path.extend([".", ".."])
 
 import irmin  # type: ignore # noqa: E402

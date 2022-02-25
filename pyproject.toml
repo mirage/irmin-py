@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "irmin"
-version = "0.1.0"
+version = "0.3.1b0"
 description = "Irmin bindings for Python"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
+readme = "README.md"
+repository = "https://github.com/mirage/irmin-py"
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -11,6 +13,10 @@ cffi = "^1.15.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
+black = "^22.1.0"
+
+[tool.black]
+include = '.*\.py'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
