@@ -1,5 +1,9 @@
 # irmin-py
 
+<a href="https://pypi.org/project/irmin/">
+  <img alt="PyPI" src="https://img.shields.io/pypi/v/irmin">
+</a>
+
 [irmin](https://irmin.org) bindings for Python
 
 This crate enables you to call directly into irmin from your Python application and
